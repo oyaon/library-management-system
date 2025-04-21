@@ -42,3 +42,19 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Library Management System
+backend/src/config/seed.js
+backend/src/tests/setup.js
+backend/src/tests/api.test.js
+backend/src/tests/user.test.js
+backend/src/tests/book.test.js
+backend/src/tests/transaction.test.js
+backend/src/tests/reservation.test.js
+backend/src/tests/payment.test.js
+backend/src/tests/fine.test.js
+backend/src/tests/report.test.js
+backend/src/tests/user.test.js
+npm create vite@latest frontend -- --template react
+cd frontend
+npm install @mui/material @emotion/react @emotion/styled react-router-dom axios react-hook-form yup
