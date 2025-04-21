@@ -1,0 +1,12 @@
+{
+  "name": "library-management-system",
+  "version": "1.0.0",
+  "description": "Library Management System with Frontend and Backend",
+  "scripts": {
+    "backend": "cd backend && npm run dev",
+    "install-backend": "cd backend && npm install"
+  },
+  "keywords": ["library", "management", "fullstack"],
+  "author": "",
+  "license": "ISC"
+}
