@@ -1,5 +1,6 @@
 const Transaction = require('../models/transaction.model');
 const Book = require('../models/book.model');
+const paginate = require('../utils/pagination');
 
 // Borrow a book
 exports.borrowBook = async (req, res) => {
@@ -102,11 +103,15 @@ exports.returnBook = async (req, res) => {
 // Get user's transactions
 exports.getUserTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction.find({ user: req.user.id })
-            .populate('book', 'title author ISBN')
-            .sort({ createdAt: -1 });
-
-        res.json(transactions);
+        const filter = { user: req.user.id };
+        const options = { populate: [{ path: 'book', select: 'title author ISBN' }] };
+        const { docs: transactions, pagination } = await paginate(Transaction, filter, req.query, options);
+        res.json({
+            transactions,
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching transactions', error: error.message });
     }
@@ -115,28 +120,21 @@ exports.getUserTransactions = async (req, res) => {
 // Get all transactions (admin only)
 exports.getAllTransactions = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const query = {};
-        if (req.query.status) query.status = req.query.status;
-        if (req.query.userId) query.user = req.query.userId;
-
-        const transactions = await Transaction.find(query)
-            .populate('user', 'name email')
-            .populate('book', 'title author ISBN')
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
-
-        const total = await Transaction.countDocuments(query);
-
+        const filter = {};
+        if (req.query.status) filter.status = req.query.status;
+        if (req.query.userId) filter.user = req.query.userId;
+        const options = {
+            populate: [
+                { path: 'user', select: 'name email' },
+                { path: 'book', select: 'title author ISBN' }
+            ]
+        };
+        const { docs: transactions, pagination } = await paginate(Transaction, filter, req.query, options);
         res.json({
             transactions,
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            total
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching transactions', error: error.message });

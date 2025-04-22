@@ -1,29 +1,19 @@
 const User = require('../models/user.model');
+const paginate = require('../utils/pagination');
 
 // Get all users (admin only)
 exports.getUsers = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const query = {};
-        if (req.query.role) query.role = req.query.role;
-        if (req.query.status) query.status = req.query.status;
-
-        const users = await User.find(query)
-            .select('-password')
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
-
-        const total = await User.countDocuments(query);
-
+        const filter = {};
+        if (req.query.role) filter.role = req.query.role;
+        if (req.query.status) filter.status = req.query.status;
+        const options = { select: '-password' };
+        const { docs: users, pagination } = await paginate(User, filter, req.query, options);
         res.json({
             users,
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            total
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching users', error: error.message });

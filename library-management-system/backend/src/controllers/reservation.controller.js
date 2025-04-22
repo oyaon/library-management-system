@@ -1,4 +1,5 @@
 const Book = require('../models/book.model');
+const paginate = require('../utils/pagination');
 
 // Create a reservation
 exports.createReservation = async (req, res) => {
@@ -73,23 +74,21 @@ exports.cancelReservation = async (req, res) => {
 // Get user's reservations
 exports.getUserReservations = async (req, res) => {
     try {
-        const books = await Book.find({
-            'reservations.user': req.user.id,
-            'reservations.status': 'pending'
-        }).select('title author reservations');
-
+        const filter = { 'reservations.user': req.user.id, 'reservations.status': 'pending' };
+        const options = { select: 'title author reservations' };
+        const { docs: books, pagination } = await paginate(Book, filter, req.query, options);
         const reservations = books.map(book => ({
-            book: {
-                id: book._id,
-                title: book.title,
-                author: book.author
-            },
+            book: { id: book._id, title: book.title, author: book.author },
             reservation: book.reservations.find(r => 
                 r.user.toString() === req.user.id && r.status === 'pending'
             )
         }));
-
-        res.json(reservations);
+        res.json({
+            reservations,
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching reservations', error: error.message });
     }
@@ -98,24 +97,24 @@ exports.getUserReservations = async (req, res) => {
 // Get all reservations (admin only)
 exports.getAllReservations = async (req, res) => {
     try {
-        const books = await Book.find({
-            'reservations.0': { $exists: true }
-        })
-        .select('title author reservations')
-        .populate('reservations.user', 'name email');
-
+        const filter = { 'reservations.0': { $exists: true } };
+        const options = { 
+            select: 'title author reservations',
+            populate: { path: 'reservations.user', select: 'name email' }
+        };
+        const { docs: books, pagination } = await paginate(Book, filter, req.query, options);
         const reservations = books.flatMap(book => 
             book.reservations.map(reservation => ({
-                book: {
-                    id: book._id,
-                    title: book.title,
-                    author: book.author
-                },
+                book: { id: book._id, title: book.title, author: book.author },
                 reservation
             }))
         );
-
-        res.json(reservations);
+        res.json({
+            reservations,
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching all reservations', error: error.message });
     }

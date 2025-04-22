@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
-import api from "../api/axios";
-import type { AuthContextType, User } from "./types";
+import React, { createContext, useState, useEffect } from 'react';
+import api from '../api/axios';
+import type { AuthContextType, User } from './types';
 
-export const AuthProvider: React.FC = ({ children }) => {
+// Create context
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,18 +15,20 @@ export const AuthProvider: React.FC = ({ children }) => {
   const hasRole = (role: string) => user?.role === role;
   const isAdmin = () => user?.role === 'admin';
 
+  // Fetch current user on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       setLoading(true);
       api
-        .get('/auth/me')
-        .then((res) => setUser(res.data.user))
+        .get('/auth/profile')
+        .then(res => setUser(res.data.user))
         .catch(() => setUser(null))
         .finally(() => setLoading(false));
     }
   }, []);
 
+  // Login function
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -40,11 +45,13 @@ export const AuthProvider: React.FC = ({ children }) => {
     }
   };
 
+  // Logout function
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
+  // Register function
   const register = async (email: string, password: string, name?: string) => {
     setLoading(true);
     setError(null);
@@ -61,6 +68,7 @@ export const AuthProvider: React.FC = ({ children }) => {
     }
   };
 
+  // Context value
   const contextValue: AuthContextType = {
     user,
     login,

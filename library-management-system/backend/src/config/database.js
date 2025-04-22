@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI, {
+        // Determine MongoDB URI based on environment
+        const uri = process.env.NODE_ENV === 'test'
+            ? (process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/library-test')
+            : (process.env.MONGODB_URI || 'mongodb://localhost:27017/library');
+        const conn = await mongoose.connect(uri, {
             useNewUrlParser: true,
             useUnifiedTopology: true
         });

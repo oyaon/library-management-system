@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+const connectDB = require('./config/database');
 require('dotenv').config();
 
 // Import routes
@@ -33,30 +32,6 @@ const limiter = rateLimit({
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100 // limit each IP to 100 requests per windowMs
 });
 app.use('/api', limiter); // Only apply to API routes
-
-// Swagger configuration
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'Library Management System API',
-            version: '1.0.0',
-            description: 'API documentation for the Library Management System'
-        },
-        servers: [
-            {
-                url: process.env.NODE_ENV === 'test' 
-                    ? 'http://localhost:0/api' 
-                    : `http://localhost:${process.env.PORT || 3000}/api`,
-                description: process.env.NODE_ENV === 'test' ? 'Test server' : 'Development server'
-            }
-        ]
-    },
-    apis: ['./src/routes/*.js']
-};
-
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -107,31 +82,10 @@ let server;
 
 const startServer = async (port = process.env.PORT || 3000) => {
     try {
-        // Get the appropriate MongoDB URI based on environment
-        const MONGODB_URI = process.env.NODE_ENV === 'test'
-            ? (process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/library-test')
-            : (process.env.MONGODB_URI || 'mongodb://localhost:27017/library');
-
         console.log('Environment:', process.env.NODE_ENV);
-        console.log('Attempting to connect to MongoDB at:', MONGODB_URI);
 
-        // Connect to MongoDB with retry logic
-        let connected = false;
-        for (let i = 0; i < 3 && !connected; i++) {
-            try {
-                await mongoose.connect(MONGODB_URI, {
-                    useNewUrlParser: true,
-                    useUnifiedTopology: true,
-                    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-                });
-                connected = true;
-                console.log('Connected to MongoDB successfully');
-            } catch (error) {
-                if (i === 2) throw error;
-                console.log('Retrying MongoDB connection...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-        }
+        // Connect to MongoDB
+        await connectDB();
 
         // Start the server
         server = app.listen(port, () => {

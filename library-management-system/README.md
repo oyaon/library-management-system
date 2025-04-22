@@ -45,7 +45,7 @@ library-management-system/
 
 ## Setup
 
-### Backend
+### Backend Setup
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -54,16 +54,35 @@ library-management-system/
    ```bash
    npm install
    ```
-3. Create a `.env` file in the backend directory with:
+3. Copy `.env.example` and update it:
+   ```bash
+   cp .env.example .env   # or 'copy .env.example .env' on Windows
    ```
-   PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/library_management
-   JWT_SECRET=your_jwt_secret_key
-   NODE_ENV=development
+4. (Optional) Seed the database:
+   ```bash
+   npm run seed
    ```
-4. Start the development server:
+5. Start the development server:
    ```bash
    npm run dev
+   ```
+
+### Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. (If required) Copy or create frontend `.env` from `.env.example`:
+   ```bash
+   cp .env.example .env   # adjust vars as needed
+   ```
+4. Start the frontend in development mode:
+   ```bash
+   npm run dev   # or npm start
    ```
 
 ## API Documentation

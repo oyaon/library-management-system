@@ -1,4 +1,5 @@
 const Book = require('../models/book.model');
+const paginate = require('../utils/pagination');
 
 // Create new book
 exports.createBook = async (req, res) => {
@@ -13,30 +14,18 @@ exports.createBook = async (req, res) => {
 // Get all books with pagination and filters
 exports.getBooks = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        // Build filter based on query params
+        const filter = {};
+        if (req.query.category) filter.category = req.query.category;
+        if (req.query.status) filter.status = req.query.status;
+        if (req.query.search) filter.$text = { $search: req.query.search };
 
-        // Build query based on filters
-        const query = {};
-        if (req.query.category) query.category = req.query.category;
-        if (req.query.status) query.status = req.query.status;
-        if (req.query.search) {
-            query.$text = { $search: req.query.search };
-        }
-
-        const books = await Book.find(query)
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
-
-        const total = await Book.countDocuments(query);
-
+        const { docs: books, pagination } = await paginate(Book, filter, req.query);
         res.json({
             books,
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            total
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching books', error: error.message });
@@ -94,14 +83,18 @@ exports.searchBooks = async (req, res) => {
             return res.status(400).json({ message: 'Search query is required' });
         }
 
-        const books = await Book.find(
-            { $text: { $search: searchQuery } },
-            { score: { $meta: 'textScore' } }
-        )
-        .sort({ score: { $meta: 'textScore' } })
-        .limit(20);
-
-        res.json(books);
+        const filter = { $text: { $search: searchQuery } };
+        const options = {
+            sort: { score: { $meta: 'textScore' } },
+            select: { score: { $meta: 'textScore' } }
+        };
+        const { docs: books, pagination } = await paginate(Book, filter, req.query, options);
+        res.json({
+            books,
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error searching books', error: error.message });
     }

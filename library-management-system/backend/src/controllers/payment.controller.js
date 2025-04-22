@@ -1,5 +1,6 @@
 const Payment = require('../models/payment.model');
 const Transaction = require('../models/transaction.model');
+const paginate = require('../utils/pagination');
 
 // Create a new payment
 exports.createPayment = async (req, res) => {
@@ -52,11 +53,15 @@ exports.createPayment = async (req, res) => {
 // Get user's payment history
 exports.getUserPayments = async (req, res) => {
     try {
-        const payments = await Payment.find({ user: req.user.id })
-            .populate('transaction', 'borrowDate returnDate')
-            .sort({ createdAt: -1 });
-
-        res.json(payments);
+        const filter = { user: req.user.id };
+        const options = { populate: [{ path: 'transaction', select: 'borrowDate returnDate' }] };
+        const { docs: payments, pagination } = await paginate(Payment, filter, req.query, options);
+        res.json({
+            payments,
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching payments', error: error.message });
     }
@@ -65,28 +70,21 @@ exports.getUserPayments = async (req, res) => {
 // Get all payments (admin only)
 exports.getAllPayments = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const query = {};
-        if (req.query.status) query.status = req.query.status;
-        if (req.query.paymentMethod) query.paymentMethod = req.query.paymentMethod;
-
-        const payments = await Payment.find(query)
-            .populate('user', 'name email')
-            .populate('transaction', 'borrowDate returnDate')
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 });
-
-        const total = await Payment.countDocuments(query);
-
+        const filter = {};
+        if (req.query.status) filter.status = req.query.status;
+        if (req.query.paymentMethod) filter.paymentMethod = req.query.paymentMethod;
+        const options = {
+            populate: [
+                { path: 'user', select: 'name email' },
+                { path: 'transaction', select: 'borrowDate returnDate' }
+            ]
+        };
+        const { docs: payments, pagination } = await paginate(Payment, filter, req.query, options);
         res.json({
             payments,
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            total
+            currentPage: pagination.page,
+            totalPages: pagination.totalPages,
+            total: pagination.total
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching payments', error: error.message });
