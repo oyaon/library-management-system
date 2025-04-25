@@ -31,6 +31,9 @@
     "helmet": "^6.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.8.6",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3"
   },

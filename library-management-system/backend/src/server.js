@@ -80,7 +80,7 @@ app.use((req, res) => {
 
 let server;
 
-const startServer = async (port = process.env.PORT || 3000) => {
+const startServer = async (port = process.env.PORT || 5000) => {
     try {
         console.log('Environment:', process.env.NODE_ENV);
 
