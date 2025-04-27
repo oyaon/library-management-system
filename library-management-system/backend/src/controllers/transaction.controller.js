@@ -1,6 +1,7 @@
 const Transaction = require('../models/transaction.model');
 const Book = require('../models/book.model');
 const paginate = require('../utils/pagination');
+const { createAuditLog } = require('./auditlog.controller');
 
 // Borrow a book
 exports.borrowBook = async (req, res) => {
@@ -47,6 +48,8 @@ exports.borrowBook = async (req, res) => {
             book.save()
         ]);
 
+        createAuditLog('Borrow Book', req.user._id, 'Transaction', transaction._id, { book: transaction.book, user: transaction.user });
+
         res.status(201).json({
             message: 'Book borrowed successfully',
             transaction
@@ -89,6 +92,8 @@ exports.returnBook = async (req, res) => {
             transaction.save(),
             book.save()
         ]);
+
+        createAuditLog('Return Book', req.user._id, 'Transaction', transaction._id, { book: transaction.book, user: transaction.user });
 
         res.json({
             message: 'Book returned successfully',

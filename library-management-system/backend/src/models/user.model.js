@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'suspended'],
         default: 'active'
-    }
+    },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null }
 }, {
     timestamps: true
 });

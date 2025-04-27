@@ -46,16 +46,16 @@ const adminAuth = async (req, res, next) => {
     try {
         await auth(req, res, () => {
             console.log('User role:', req.user.role);
-            if (req.user.role !== 'admin') {
-                console.log('User is not admin');
-                throw new Error('Not an admin');
+            if (req.user.role !== 'admin' && req.user.role !== 'member') {
+                console.log('User is not admin or member');
+                throw new Error('Not an admin or member');
             }
             next();
         });
     } catch (error) {
         console.error('Admin auth error:', error.message);
         res.status(403).json({ 
-            message: 'Access denied. Admin privileges required.',
+            message: 'Access denied. Admin or member privileges required.',
             error: error.message 
         });
     }

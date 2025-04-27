@@ -14,6 +14,8 @@ const transactionRoutes = require('./routes/transaction.routes');
 const reservationRoutes = require('./routes/reservation.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const reportRoutes = require('./routes/report.routes');
+const auditLogRoutes = require('./routes/auditlog.routes');
+const categoryRoutes = require('./routes/category.routes');
 
 const app = express();
 
@@ -41,6 +43,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

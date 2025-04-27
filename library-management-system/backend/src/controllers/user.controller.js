@@ -1,10 +1,11 @@
 const User = require('../models/user.model');
 const paginate = require('../utils/pagination');
+const { createAuditLog, logUserCreate, logUserEdit, logUserDelete } = require('./auditlog.controller');
 
 // Get all users (admin only)
 exports.getUsers = async (req, res) => {
     try {
-        const filter = {};
+        const filter = { isDeleted: false };
         if (req.query.role) filter.role = req.query.role;
         if (req.query.status) filter.status = req.query.status;
         const options = { select: '-password' };
@@ -23,7 +24,8 @@ exports.getUsers = async (req, res) => {
 // Get single user (admin only)
 exports.getUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-password');
+        const filter = { _id: req.params.id, isDeleted: false };
+        const user = await User.findOne(filter).select('-password');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -58,13 +60,87 @@ exports.updateUser = async (req, res) => {
             { new: true, runValidators: true }
         ).select('-password');
 
+        if (user) {
+            if (req.body.role === 'admin') {
+                createAuditLog('Promote to Admin', req.user._id, 'User', userId, { newRole: 'admin' });
+            }
+            if (req.body.status === 'suspended' || req.body.status === 'active') {
+                createAuditLog('Change User Status', req.user._id, 'User', userId, { newStatus: req.body.status });
+            }
+        }
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        await logUserEdit(req, user, { old: await User.findById(userId), updated: user });
         res.json({ message: 'User updated successfully', user });
     } catch (error) {
         res.status(500).json({ message: 'Error updating user', error: error.message });
+    }
+};
+
+// Soft delete a user
+exports.softDeleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByIdAndUpdate(id, { isDeleted: true, deletedAt: new Date() }, { new: true });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        await logUserDelete(req, user, { softDeleted: true });
+        res.json({ message: 'User soft-deleted', user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error soft deleting user', error: error.message });
+    }
+};
+
+// Restore a user
+exports.restoreUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByIdAndUpdate(id, { isDeleted: false, deletedAt: null }, { new: true });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        await logUserEdit(req, user, { restored: true });
+        res.json({ message: 'User restored', user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error restoring user', error: error.message });
+    }
+};
+
+// Bulk import users
+exports.bulkImportUsers = async (req, res) => {
+    try {
+        const users = await User.insertMany(req.body.users);
+        res.json({ message: 'Users imported', users });
+    } catch (error) {
+        res.status(500).json({ message: 'Error importing users', error: error.message });
+    }
+};
+
+// Export all non-deleted users
+exports.exportUsers = async (req, res) => {
+    try {
+        const users = await User.find({ isDeleted: false });
+        res.json({ users });
+    } catch (error) {
+        res.status(500).json({ message: 'Error exporting users', error: error.message });
+    }
+};
+
+// Advanced filter for users
+exports.advancedUserFilter = async (req, res) => {
+    try {
+        const { name, email, from, to, isDeleted } = req.query;
+        let filter = { isDeleted: false };
+        if (name) filter.name = { $regex: name, $options: 'i' };
+        if (email) filter.email = { $regex: email, $options: 'i' };
+        if (isDeleted !== undefined) filter.isDeleted = isDeleted === 'true';
+        if (from || to) filter.createdAt = {};
+        if (from) filter.createdAt.$gte = new Date(from);
+        if (to) filter.createdAt.$lte = new Date(to);
+        const users = await User.find(filter);
+        res.json({ users });
+    } catch (error) {
+        res.status(500).json({ message: 'Error filtering users', error: error.message });
     }
 };
 
@@ -72,6 +148,9 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
+        if (user) {
+            createAuditLog('Delete User', req.user._id, 'User', req.params.id, { email: user.email });
+        }
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

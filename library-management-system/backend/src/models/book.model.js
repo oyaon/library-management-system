@@ -80,7 +80,9 @@ const bookSchema = new mongoose.Schema({
                 return date;
             }
         }
-    }]
+    }],
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null }
 }, {
     timestamps: true
 });

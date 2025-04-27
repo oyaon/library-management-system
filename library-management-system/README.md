@@ -2,6 +2,22 @@
 
 A full-stack Library Management System with Node.js backend and modern frontend (to be implemented).
 
+## Enterprise-Grade Data Management & Auditability
+
+### Key Highlights
+
+- **Structured Data Models:** Robust Mongoose models for all core entities (users, books, categories, etc.), ensuring data integrity and validation.
+- **Modular Architecture:** Separate controllers and routes for each domain, supporting scalability and maintainability.
+- **Comprehensive CRUD Operations:** Full support for creating, reading, updating, and deleting records for users, books, and categories.
+- **Advanced Validation & Security:** Middleware for input validation, authentication, and authorization; secure API endpoints with JWT, Helmet, and CORS.
+- **Audit Logging:** Every critical action (create, update, delete) on categories, books, and users is tracked in a dedicated audit log for full traceability.
+- **Audit APIs:** Endpoints for querying and reviewing audit logs, supporting transparency and compliance.
+- **Reporting:** Built-in reporting features for administrators to review historical activity and changes.
+- **Automated Testing:** Extensive backend (Jest) and frontend (Vitest) test suites to ensure reliability.
+- **Dockerized Workflow:** Easy deployment and scaling using Docker Compose for backend and database orchestration.
+- **API Documentation:** Integrated Swagger UI for clear and interactive API documentation.
+- **Modern Frontend:** React + TypeScript frontend for a seamless user experience.
+
 ## Project Structure
 
 ```

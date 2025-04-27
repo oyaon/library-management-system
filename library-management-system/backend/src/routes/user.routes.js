@@ -5,7 +5,12 @@ const {
     getUser,
     updateUser,
     deleteUser,
-    changePassword
+    changePassword,
+    softDeleteUser,
+    restoreUser,
+    bulkImportUsers,
+    exportUsers,
+    advancedUserFilter
 } = require('../controllers/user.controller');
 const { auth, adminAuth } = require('../middleware/auth.middleware');
 const { 
@@ -17,6 +22,11 @@ const {
 router.get('/', adminAuth, getUsers);
 router.get('/:id', adminAuth, getUser);
 router.delete('/:id', adminAuth, deleteUser);
+router.patch('/:id/soft-delete', adminAuth, softDeleteUser);
+router.patch('/:id/restore', adminAuth, restoreUser);
+router.post('/bulk-import', adminAuth, bulkImportUsers);
+router.get('/export', adminAuth, exportUsers);
+router.get('/advanced-filter', adminAuth, advancedUserFilter);
 
 // Protected routes (admin or self)
 router.put('/:id', auth, updateUserValidation, updateUser);

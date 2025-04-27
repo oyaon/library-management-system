@@ -1,6 +1,7 @@
 const Payment = require('../models/payment.model');
 const Transaction = require('../models/transaction.model');
 const paginate = require('../utils/pagination');
+const { createAuditLog } = require('./auditlog.controller');
 
 // Create a new payment
 exports.createPayment = async (req, res) => {
@@ -36,6 +37,7 @@ exports.createPayment = async (req, res) => {
             paymentMethod,
             status: 'completed'
         });
+        createAuditLog('Payment', req.user._id, 'Payment', payment._id, { transactionId, amount, paymentMethod });
 
         // Update transaction fine status
         transaction.fine.paid = true;
